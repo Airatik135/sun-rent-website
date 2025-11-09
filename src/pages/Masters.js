@@ -25,11 +25,45 @@ import {
   Chip,
   Switch,
   FormControlLabel,
-  Divider
+  Divider,
+  Avatar,
+  Stack,
+  Card,
+  CardContent,
+  CardActions,
+  CardHeader,
+  useTheme
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import { styled } from '@mui/material/styles';
+
+// Стилизованная карточка для мастера
+const StyledCard = styled(Card)(({ theme }) => ({
+  marginBottom: theme.spacing(2),
+  borderRadius: '12px',
+  boxShadow: theme.shadows[2],
+  background: 'linear-gradient(145deg, #f0f0f0, #e0e0e0)',
+  border: '1px solid #ddd',
+  transition: 'box-shadow 0.3s ease-in-out',
+  '&:hover': {
+    boxShadow: theme.shadows[6],
+  },
+}));
+
+// Стилизованная ячейка таблицы
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  fontWeight: '500',
+  color: '#333',
+}));
+
+// Стилизованный заголовок таблицы
+const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
+  fontWeight: 'bold',
+  color: '#2c3e50',
+  backgroundColor: '#f8f9fa',
+}));
 
 const Masters = () => {
   const [user, setUser] = useState(null);
@@ -38,7 +72,7 @@ const Masters = () => {
   const [editingMaster, setEditingMaster] = useState(null);
   const [newMaster, setNewMaster] = useState({
     name: '',
-    telegramId: '', // Добавлено поле
+    telegramId: '',
     status: 'Не на работе',
     salary: 0,
     workStart: null,
@@ -47,6 +81,7 @@ const Masters = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const theme = useTheme(); // Для получения темы
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -101,7 +136,7 @@ const Masters = () => {
       setEditingMaster(master);
       setNewMaster({
         name: master.name,
-        telegramId: master.telegramId || '', // Заполняем поле
+        telegramId: master.telegramId || '',
         status: master.status,
         salary: master.salary || 0,
         workStart: master.workStart || null,
@@ -112,7 +147,7 @@ const Masters = () => {
       setEditingMaster(null);
       setNewMaster({
         name: '',
-        telegramId: '', // Добавлено поле
+        telegramId: '',
         status: 'Не на работе',
         salary: 0,
         workStart: null,
@@ -173,78 +208,157 @@ const Masters = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: 2, mb: 4, minHeight: '100vh', background: 'linear-gradient(to bottom right, #f5f7fa, #e4edf5)', padding: '20px', borderRadius: '12px' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#2c3e50', textAlign: 'center', mb: 3, mt: 1 }}>
         Мастера
       </Typography>
-      <Button variant="contained" color="primary" sx={{ mb: 2 }} onClick={() => handleOpenDialog()}>
-        <AddCircleIcon sx={{ mr: 1 }} /> Добавить мастера
-      </Button>
 
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table aria-label="masters table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Имя</TableCell>
-              <TableCell>ID в Telegram</TableCell>
-              <TableCell>Статус</TableCell>
-              <TableCell>Зарплата</TableCell>
-              <TableCell>Последнее Время работы</TableCell>
-              <TableCell>Действия</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {masters.map(master => (
-              <TableRow key={master.id}>
-                <TableCell>{master.name}</TableCell>
-                <TableCell>{master.telegramId || 'Не указан'}</TableCell>
-                <TableCell>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <Button variant="contained" color="primary" sx={{ mb: 2, px: 3, py: 1.5 }} onClick={() => handleOpenDialog()}>
+          <AddCircleIcon sx={{ mr: 1 }} /> Добавить мастера
+        </Button>
+      </Box>
+
+      {/* Карточки для мастеров */}
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' } }}>
+        {masters.map(master => (
+          <StyledCard key={master.id}>
+            <CardHeader
+              avatar={
+                <Avatar sx={{ bgcolor: master.status === 'На работе' ? '#2ecc71' : '#95a5a6' }}>
+                  {master.name.charAt(0)}
+                </Avatar>
+              }
+              title={master.name}
+              subheader={`ID: ${master.telegramId || 'Не указан'}`}
+            />
+            <CardContent>
+              <Stack spacing={1}>
+                <Box display="flex" alignItems="center">
                   <Chip
                     label={master.status}
                     color={master.status === 'На работе' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>{master.salary || 0} ₽</TableCell>
-                <TableCell>
-                  {master.workStart ? master.workStart.toDate().toLocaleString('ru-RU') : 'Не указано'}
-                  <br />
-                  {master.workEnd ? master.workEnd.toDate().toLocaleString('ru-RU') : 'Не указано'}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<EditIcon />}
-                    onClick={() => handleOpenDialog(master)}
                     sx={{ mr: 1 }}
-                  >
-                    Редактировать
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => handleDeleteMaster(master.id)}
-                  >
-                    Удалить
-                  </Button>
-                  {/* Добавляем кнопку "Зарплата" */}
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="secondary"
-                    onClick={() => alert(`Зарплата для ${master.name} будет отображена здесь.`)}
-                    sx={{ ml: 1 }}
-                  >
-                    Зарплата
-                  </Button>
-                </TableCell>
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {master.status === 'На работе' ? 'На работе' : 'Не на работе'}
+                  </Typography>
+                </Box>
+                <Typography variant="body2">
+                  <strong>Зарплата:</strong> {master.salary || 0} ₽
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Время работы:</strong>
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Начало: {master.workStart ? master.workStart.toDate().toLocaleString('ru-RU') : 'Не указано'}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Конец: {master.workEnd ? master.workEnd.toDate().toLocaleString('ru-RU') : 'Не указано'}
+                </Typography>
+              </Stack>
+            </CardContent>
+            <CardActions sx={{ justifyContent: 'flex-end' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<EditIcon />}
+                onClick={() => handleOpenDialog(master)}
+                sx={{ mr: 1 }}
+              >
+                Редактировать
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={() => handleDeleteMaster(master.id)}
+              >
+                Удалить
+              </Button>
+              {/* Добавляем кнопку "Зарплата" */}
+              <Button
+                size="small"
+                variant="outlined"
+                color="secondary"
+                onClick={() => alert(`Зарплата для ${master.name} будет отображена здесь.`)}
+                sx={{ ml: 1 }}
+              >
+                Зарплата
+              </Button>
+            </CardActions>
+          </StyledCard>
+        ))}
+      </Box>
+
+      {/* Старая таблица как резервная */}
+      <Box sx={{ display: { xs: 'block', sm: 'none' } }}> {/* Скрываем на мобильных устройствах */}
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <Table aria-label="masters table">
+            <TableHead>
+              <TableRow>
+                <StyledTableHeadCell>Имя</StyledTableHeadCell>
+                <StyledTableHeadCell>ID в Telegram</StyledTableHeadCell>
+                <StyledTableHeadCell>Статус</StyledTableHeadCell>
+                <StyledTableHeadCell>Зарплата</StyledTableHeadCell>
+                <StyledTableHeadCell>Последнее Время работы</StyledTableHeadCell>
+                <StyledTableHeadCell>Действия</StyledTableHeadCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {masters.map(master => (
+                <TableRow key={master.id}>
+                  <StyledTableCell>{master.name}</StyledTableCell>
+                  <StyledTableCell>{master.telegramId || 'Не указан'}</StyledTableCell>
+                  <StyledTableCell>
+                    <Chip
+                      label={master.status}
+                      color={master.status === 'На работе' ? 'success' : 'default'}
+                    />
+                  </StyledTableCell>
+                  <StyledTableCell>{master.salary || 0} ₽</StyledTableCell>
+                  <StyledTableCell>
+                    {master.workStart ? master.workStart.toDate().toLocaleString('ru-RU') : 'Не указано'}
+                    <br />
+                    {master.workEnd ? master.workEnd.toDate().toLocaleString('ru-RU') : 'Не указано'}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleOpenDialog(master)}
+                      sx={{ mr: 1 }}
+                    >
+                      Редактировать
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteMaster(master.id)}
+                    >
+                      Удалить
+                    </Button>
+                    {/* Добавляем кнопку "Зарплата" */}
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="secondary"
+                      onClick={() => alert(`Зарплата для ${master.name} будет отображена здесь.`)}
+                      sx={{ ml: 1 }}
+                    >
+                      Зарплата
+                    </Button>
+                  </StyledTableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
 
       {/* Диалог добавления/редактирования */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
