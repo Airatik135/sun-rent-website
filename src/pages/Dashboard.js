@@ -1,8 +1,8 @@
 // src/pages/Dashboard.js
 import React, { useState, useEffect } from 'react';
-import { auth, db } from '../firebase.js'; // Добавлен .js
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'; // Добавлен .js
-import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore'; // Добавлен .js
+import { auth, db } from '../firebase.js';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 import {
   Typography,
   Container,
@@ -11,11 +11,11 @@ import {
   CardContent,
   CardActions,
   Button,
-  Divider, // Добавлен импорт Divider
+  Divider,
   Paper,
   Alert,
   Snackbar,
-} from '@mui/material'; // Убрали .js из импортов
+} from '@mui/material';
 import {
   BarChart,
   Bar,
@@ -27,14 +27,14 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-} from 'recharts'; // Импортируем компоненты для графиков
-import { useNavigate } from 'react-router-dom'; // Добавлен .js
-import AddCircleIcon from '@mui/icons-material/AddCircle'; // Убрали .js из импорта
-import PeopleIcon from '@mui/icons-material/People'; // Убрали .js из импорта
-import BuildIcon from '@mui/icons-material/Build'; // Убрали .js из импорта
-import InventoryIcon from '@mui/icons-material/Inventory'; // Убрали .js из импорта
-import AssessmentIcon from '@mui/icons-material/Assessment'; // Убрали .js из импорта
-import { styled } from '@mui/material/styles'; // Убрали .js из импорта
+} from 'recharts';
+import { useNavigate } from 'react-router-dom';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import PeopleIcon from '@mui/icons-material/People';
+import BuildIcon from '@mui/icons-material/Build';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import { styled } from '@mui/material/styles';
 
 // Стилизованные компоненты для карточек
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -42,6 +42,10 @@ const StyledCard = styled(Card)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   transition: 'box-shadow 0.3s ease-in-out',
+  background: 'linear-gradient(145deg, #f0f0f0, #e0e0e0)', // Градиент для карточек
+  border: '1px solid #ddd', // Легкая рамка
+  borderRadius: '12px', // Скругление углов
+  boxShadow: theme.shadows[2], // Тень по умолчанию
   '&:hover': {
     boxShadow: theme.shadows[6], // Увеличиваем тень при наведении
   },
@@ -51,16 +55,18 @@ const StyledCardHeader = styled(Typography)(({ theme }) => ({
   fontWeight: 'bold',
   fontSize: '1.1rem',
   marginBottom: theme.spacing(1),
+  color: '#333', // Темный текст для лучшей читаемости
 }));
 
 const StyledCardContent = styled(CardContent)(({ theme }) => ({
-  flexGrow: 1, // Заполняет доступное пространство
+  flexGrow: 1,
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
+  padding: theme.spacing(2), // Увеличиваем внутренний отступ
 }));
 
-// Функция для форматирования чисел (например, добавление пробелов между тысячами)
+// Функция для форматирования чисел
 const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 };
@@ -96,7 +102,7 @@ const Dashboard = () => {
   useEffect(() => {
     // Подписка на общее количество ремонтов
     const repairsCollection = collection(db, 'repairs');
-    const qRepairs = query(repairsCollection, orderBy('createdAt', 'desc')); // Сортировка по дате создания
+    const qRepairs = query(repairsCollection, orderBy('createdAt', 'desc'));
     const unsubscribeRepairs = onSnapshot(qRepairs, (snapshot) => {
       const repairsList = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setMetrics((prevMetrics) => ({
@@ -146,9 +152,7 @@ const Dashboard = () => {
       }));
     });
 
-    // --- Пример данных для графика (замените на реальные данные из Firestore если нужно) ---
-    // Предположим, что данные о трендах ремонтов уже получены или рассчитаны
-    // Здесь мы просто используем примеры
+    // --- Пример данных для графика ---
     const sampleRepairTrends = [
       { date: '01.11.2025', count: 10 },
       { date: '02.11.2025', count: 15 },
@@ -163,7 +167,6 @@ const Dashboard = () => {
       repairTrends: sampleRepairTrends,
     }));
 
-    // Установка состояния загрузки
     setLoading(false);
 
     // Очистка подписок
@@ -217,24 +220,6 @@ const Dashboard = () => {
     'Количество ремонтов': trend.count,
   }));
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Тренды ремонтов',
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
-  };
-
   if (loading) {
     return (
       <Container maxWidth="lg" style={{ marginTop: '20px' }}>
@@ -244,8 +229,8 @@ const Dashboard = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Container maxWidth="lg" sx={{ mt: 2, mb: 4, minHeight: '100vh', background: 'linear-gradient(to bottom right, #f5f7fa, #e4edf5)', padding: '20px', borderRadius: '12px' }}> {/* Градиент фон */}
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#2c3e50', textAlign: 'center', mb: 3, mt: 1 }}>
         Панель управления
       </Typography>
 
@@ -256,7 +241,7 @@ const Dashboard = () => {
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">Общее количество ремонтов</StyledCardHeader>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#3498db' }}>
                 {formatNumber(metrics.totalRepairs)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -266,6 +251,7 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
+                variant="outlined" // Изменено с "contained" на "outlined"
                 color="primary"
                 onClick={handleNavigateToRepairs}
                 startIcon={<BuildIcon />}
@@ -281,7 +267,7 @@ const Dashboard = () => {
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">Мастера онлайн</StyledCardHeader>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2ecc71' }}>
                 {formatNumber(metrics.onlineMasters)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -291,6 +277,7 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
+                variant="outlined" // Изменено с "contained" на "outlined"
                 color="primary"
                 onClick={handleNavigateToMasters}
                 startIcon={<PeopleIcon />}
@@ -306,7 +293,7 @@ const Dashboard = () => {
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">Критически важные запчасти</StyledCardHeader>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#e74c3c' }}>
                 {formatNumber(metrics.criticalParts)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -316,6 +303,7 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
+                variant="outlined" // Изменено с "contained" на "outlined"
                 color="primary"
                 onClick={handleNavigateToParts}
                 startIcon={<InventoryIcon />}
@@ -331,12 +319,12 @@ const Dashboard = () => {
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">Последние ремонты</StyledCardHeader>
-              <Paper sx={{ p: 2, maxHeight: 300, overflow: 'auto' }}>
+              <Paper sx={{ p: 2, maxHeight: 300, overflow: 'auto', backgroundColor: '#fafafa' }}>
                 {metrics.recentRepairs.length > 0 ? (
-                  <ul style={{ paddingLeft: '1rem' }}>
+                  <ul style={{ paddingLeft: '1rem', margin: 0 }}>
                     {metrics.recentRepairs.map((repair) => (
-                      <li key={repair.id}>
-                        {repair.masterName || 'Не указан'} -{' '}
+                      <li key={repair.id} style={{ marginBottom: '8px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+                        <strong>{repair.masterName || 'Не указан'}</strong> -{' '}
                         {repair.scooterModel || 'Модель не указана'} -{' '}
                         {repair.createdAt?.toDate().toLocaleDateString('ru-RU') || 'Дата не указана'}
                       </li>
@@ -352,6 +340,7 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
+                variant="outlined" // Изменено с "contained" на "outlined"
                 color="primary"
                 onClick={handleNavigateToRepairs}
                 startIcon={<BuildIcon />}
@@ -367,16 +356,16 @@ const Dashboard = () => {
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">График загрузки мастеров</StyledCardHeader>
-              <Paper sx={{ height: 250, p: 1 }}>
+              <Paper sx={{ height: 250, p: 1, backgroundColor: '#ffffff' }}>
                 {metrics.repairTrends.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+                      <XAxis dataKey="name" stroke="#666" />
+                      <YAxis stroke="#666" />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="Количество ремонтов" fill="#8884d8" />
+                      <Bar dataKey="Количество ремонтов" fill="#3498db" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -389,6 +378,7 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
+                variant="outlined" // Изменено с "contained" на "outlined"
                 color="primary"
                 onClick={handleNavigateToReports}
                 startIcon={<AssessmentIcon />}
@@ -405,7 +395,7 @@ const Dashboard = () => {
       <Grid container spacing={2} justifyContent="center">
         <Grid item>
           <Button
-            variant="contained"
+            variant="outlined" // Изменено с "contained" на "outlined"
             color="primary"
             onClick={handleNavigateToRepairs}
             startIcon={<BuildIcon />}
@@ -416,7 +406,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item>
           <Button
-            variant="contained"
+            variant="outlined" // Изменено с "contained" на "outlined"
             color="primary"
             onClick={handleNavigateToMasters}
             startIcon={<PeopleIcon />}
@@ -427,7 +417,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item>
           <Button
-            variant="contained"
+            variant="outlined" // Изменено с "contained" на "outlined"
             color="primary"
             onClick={handleNavigateToParts}
             startIcon={<InventoryIcon />}
@@ -438,7 +428,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item>
           <Button
-            variant="contained"
+            variant="outlined" // Изменено с "contained" на "outlined"
             color="primary"
             onClick={handleNavigateToReports}
             startIcon={<AssessmentIcon />}
@@ -449,7 +439,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item>
           <Button
-            variant="contained"
+            variant="outlined" // Изменено с "contained" на "outlined"
             color="primary"
             onClick={handleNavigateToSettings}
             startIcon={<AddCircleIcon />}
