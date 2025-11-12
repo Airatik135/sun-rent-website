@@ -1,7 +1,7 @@
-// src/components/Enhanced3DLogin.js
+// src/components/Enhanced3DLogin
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, ContactShadows, Html } from '@react-three/drei';
+import { ContactShadows, Html } from '@react-three/drei'; // Удалили Environment и добавили Html
 import * as THREE from 'three';
 
 const LoginScene = ({ onLogin }) => {
@@ -73,51 +73,61 @@ const LoginScene = ({ onLogin }) => {
     );
   };
 
-  // Система частиц
-  const Particles = () => {
-    const particles = useRef();
-    const { size } = useThree();
+ // Система частиц
+const Particles = () => {
+  const particles = useRef();
+  const { size } = useThree();
+  
+  useEffect(() => {
+    if (!particles.current) return;
     
-    useEffect(() => {
-      const count = 150;
-      const positions = new Float32Array(count * 3);
-      
-      for (let i = 0; i < count * 3; i += 3) {
-        positions[i] = (Math.random() - 0.5) * 10;
-        positions[i + 1] = (Math.random() - 0.5) * 10;
-        positions[i + 2] = (Math.random() - 0.5) * 10;
-      }
-      
-      particles.current.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    }, []);
+    const count = 150;
+    const positions = new Float32Array(count * 3);
     
-    useFrame(() => {
-      if (particles.current) {
-        particles.current.geometry.attributes.position.array.forEach((v, i) => {
-          if (i % 3 === 2) {
-            particles.current.geometry.attributes.position.array[i] += 0.01;
-            if (particles.current.geometry.attributes.position.array[i] > 5) {
-              particles.current.geometry.attributes.position.array[i] = -5;
-            }
+    for (let i = 0; i < count * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 10;
+      positions[i + 1] = (Math.random() - 0.5) * 10;
+      positions[i + 2] = (Math.random() - 0.5) * 10;
+    }
+    
+    particles.current.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  }, []);
+  
+  useFrame(() => {
+    if (particles.current && 
+        particles.current.geometry && 
+        particles.current.geometry.attributes && 
+        particles.current.geometry.attributes.position) {
+      
+      const positionAttribute = particles.current.geometry.attributes.position;
+      
+      for (let i = 0; i < positionAttribute.count; i++) {
+        // Обновляем только Z-координату (i % 3 === 2)
+        if (i % 3 === 2) {
+          positionAttribute.setZ(i, positionAttribute.getZ(i) + 0.01);
+          if (positionAttribute.getZ(i) > 5) {
+            positionAttribute.setZ(i, -5);
           }
-        });
-        particles.current.geometry.attributes.position.needsUpdate = true;
+        }
       }
-    });
-    
-    return (
-      <points ref={particles}>
-        <bufferGeometry />
-        <pointsMaterial 
-          size={0.1} 
-          color="#0077ff" 
-          transparent 
-          opacity={0.7} 
-          sizeAttenuation={true} 
-        />
-      </points>
-    );
-  };
+      
+      positionAttribute.needsUpdate = true;
+    }
+  });
+  
+  return (
+    <points ref={particles}>
+      <bufferGeometry />
+      <pointsMaterial 
+        size={0.1} 
+        color="#0077ff" 
+        transparent 
+        opacity={0.7} 
+        sizeAttenuation={true} 
+      />
+    </points>
+  );
+};
 
   // Форма входа как 3D объект
   const LoginForm = () => {
@@ -230,18 +240,36 @@ const LoginScene = ({ onLogin }) => {
           />
         </mesh>
 
-        {/* Освещение */}
-        <spotLight 
-          position={[0, 2, 0]} 
-          intensity={2} 
-          color="#ffffff"
-          castShadow
-        />
-        <pointLight 
-          position={[0, 3, 0]} 
-          intensity={3} 
-          color="#0077ff"
-        />
+        {/* Дополнительные визуальные элементы */}
+        <points>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              count={500}
+              itemSize={3}
+              array={new Float32Array(500 * 3).map(() => Math.random() * 10 - 5)}
+            />
+          </bufferGeometry>
+          <pointsMaterial 
+            size={0.15} 
+            color="#4a80ff" 
+            transparent 
+            opacity={0.6} 
+            sizeAttenuation={true} 
+          />
+        </points>
+
+        {/* Анимация сферы вокруг центрального элемента */}
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[2.2, 32, 32]} />
+          <meshStandardMaterial 
+            color="#002255" 
+            transparent 
+            opacity={0.15} 
+            wireframe 
+            wireframeLinewidth={1}
+          />
+        </mesh>
       </group>
 
       {/* Система частиц */}
@@ -274,7 +302,21 @@ const Enhanced3DLogin = ({ onLogin }) => {
         shadows
       >
         <ambientLight intensity={0.5} />
-        <Environment preset="city" />
+        {/* Заменяем Environment на простые источники света */}
+        <directionalLight 
+          position={[5, 5, 5]} 
+          intensity={1.2} 
+          castShadow 
+          shadow-mapSize-width={2048} 
+          shadow-mapSize-height={2048}
+        />
+        <pointLight position={[0, 3, 0]} intensity={2} color="#0077ff" />
+        <spotLight 
+          position={[0, 2, 0]} 
+          intensity={2} 
+          color="#ffffff"
+          castShadow
+        />
         <ContactShadows position={[0, -2, 0]} opacity={0.5} scale={10} blur={2} />
         <LoginScene onLogin={onLogin} />
       </Canvas>
