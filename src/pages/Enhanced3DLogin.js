@@ -1,7 +1,7 @@
-// src/components/Enhanced3DLogin
+// src/components/Enhanced3DLogin.js
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { ContactShadows, Html } from '@react-three/drei'; // Удалили Environment и добавили Html
+import { ContactShadows, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 const LoginScene = ({ onLogin }) => {
@@ -18,7 +18,7 @@ const LoginScene = ({ onLogin }) => {
 
   // Анимация вращения камеры
   useFrame(() => {
-    if (isSpinning && !isSubmitted) {
+    if (isSpinning && !isSubmitted && !loginSuccess) {
       camera.position.x = Math.sin(Date.now() * 0.001) * 5;
       camera.position.z = Math.cos(Date.now() * 0.001) * 5;
       camera.lookAt(0, 0, 0);
@@ -28,6 +28,8 @@ const LoginScene = ({ onLogin }) => {
   // Обработка входа
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isSubmitted) return;
+    
     try {
       setIsSubmitted(true);
       setIsSpinning(false);
@@ -36,6 +38,10 @@ const LoginScene = ({ onLogin }) => {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       setLoginSuccess(true);
+      
+      // Задержка перед переходом с анимацией приветствия
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       onLogin();
     } catch (err) {
       setError('Ошибка входа');
@@ -73,88 +79,184 @@ const LoginScene = ({ onLogin }) => {
     );
   };
 
- // Система частиц
-const Particles = () => {
-  const particles = useRef();
-  const { size } = useThree();
-  
-  useEffect(() => {
-    if (!particles.current) return;
+  // Система частиц (исправленная версия)
+  const Particles = () => {
+    const particles = useRef();
+    const { size } = useThree();
     
-    const count = 150;
-    const positions = new Float32Array(count * 3);
-    
-    for (let i = 0; i < count * 3; i += 3) {
-      positions[i] = (Math.random() - 0.5) * 10;
-      positions[i + 1] = (Math.random() - 0.5) * 10;
-      positions[i + 2] = (Math.random() - 0.5) * 10;
-    }
-    
-    particles.current.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  }, []);
-  
-  useFrame(() => {
-    if (particles.current && 
-        particles.current.geometry && 
-        particles.current.geometry.attributes && 
-        particles.current.geometry.attributes.position) {
+    useEffect(() => {
+      if (!particles.current) return;
       
-      const positionAttribute = particles.current.geometry.attributes.position;
+      const count = 150;
+      const positions = new Float32Array(count * 3);
       
-      for (let i = 0; i < positionAttribute.count; i++) {
-        // Обновляем только Z-координату (i % 3 === 2)
-        if (i % 3 === 2) {
-          positionAttribute.setZ(i, positionAttribute.getZ(i) + 0.01);
-          if (positionAttribute.getZ(i) > 5) {
-            positionAttribute.setZ(i, -5);
-          }
-        }
+      for (let i = 0; i < count * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 10;
+        positions[i + 1] = (Math.random() - 0.5) * 10;
+        positions[i + 2] = (Math.random() - 0.5) * 10;
       }
       
-      positionAttribute.needsUpdate = true;
-    }
-  });
-  
-  return (
-    <points ref={particles}>
-      <bufferGeometry />
-      <pointsMaterial 
-        size={0.1} 
-        color="#0077ff" 
-        transparent 
-        opacity={0.7} 
-        sizeAttenuation={true} 
-      />
-    </points>
-  );
-};
+      particles.current.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    }, []);
+    
+    useFrame(() => {
+      if (particles.current && 
+          particles.current.geometry && 
+          particles.current.geometry.attributes && 
+          particles.current.geometry.attributes.position) {
+        
+        const positionAttribute = particles.current.geometry.attributes.position;
+        
+        for (let i = 0; i < positionAttribute.count; i++) {
+          // Обновляем только Z-координату (i % 3 === 2)
+          if (i % 3 === 2) {
+            positionAttribute.setZ(i, positionAttribute.getZ(i) + 0.01);
+            if (positionAttribute.getZ(i) > 5) {
+              positionAttribute.setZ(i, -5);
+            }
+          }
+        }
+        
+        positionAttribute.needsUpdate = true;
+      }
+    });
+    
+    return (
+      <points ref={particles}>
+        <bufferGeometry />
+        <pointsMaterial 
+          size={0.1} 
+          color="#0077ff" 
+          transparent 
+          opacity={0.7} 
+          sizeAttenuation={true} 
+        />
+      </points>
+    );
+  };
+
+  // Анимация приветствия после входа
+  const WelcomeAnimation = () => {
+    const [progress, setProgress] = useState(0);
+    const [message, setMessage] = useState("ДОБРО ПОЖАЛОВАТЬ");
+    const [subMessage, setSubMessage] = useState("");
+    
+    useFrame(() => {
+      if (loginSuccess && progress < 1) {
+        setProgress(prev => Math.min(prev + 0.02, 1));
+        
+        // Анимация текста
+        if (progress > 0.3) {
+          setMessage("ДОБРО ПОЖАЛОВАТЬ");
+        }
+        if (progress > 0.5) {
+          setSubMessage("Загрузка системы...");
+        }
+      }
+    });
+    
+    if (!loginSuccess) return null;
+    
+    return (
+      <group>
+        {/* Пульсирующий фон */}
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[3, 32, 32]} />
+          <meshStandardMaterial 
+            color="#001a4d" 
+            transparent 
+            opacity={0.8} 
+            roughness={0.5}
+          />
+        </mesh>
+        
+        {/* Сияющий круг */}
+        <mesh position={[0, 0, 0.5]}>
+          <ringGeometry args={[2.5, 2.7, 32]} />
+          <meshStandardMaterial 
+            color="#0077ff" 
+            emissive="#0055ff" 
+            emissiveIntensity={0.8}
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.7}
+          />
+        </mesh>
+        
+        {/* Текст приветствия */}
+        <Html distanceFactor={0.8} center>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            color: 'white',
+            fontSize: '2.5rem',
+            fontWeight: 'bold',
+            textShadow: '0 0 10px rgba(0, 100, 255, 0.7)',
+            opacity: progress
+          }}>
+            {message}
+            <div style={{
+              fontSize: '1.2rem',
+              marginTop: '20px',
+              opacity: progress > 0.5 ? 1 : 0,
+              transition: 'opacity 0.5s ease'
+            }}>
+              {subMessage}
+            </div>
+          </div>
+        </Html>
+        
+        {/* Анимация пульсации */}
+        {progress > 0.2 && (
+          <mesh position={[0, 0, 1]}>
+            <sphereGeometry args={[0.5, 32, 32]} />
+            <meshStandardMaterial 
+              color="#0077ff" 
+              emissive="#0077ff" 
+              emissiveIntensity={0.8 + Math.sin(Date.now() * 0.003) * 0.5}
+              transparent
+              opacity={0.6}
+            />
+          </mesh>
+        )}
+      </group>
+    );
+  };
 
   // Форма входа как 3D объект
   const LoginForm = () => {
     const [isHovered, setIsHovered] = useState(false);
     
     return (
-      <Html distanceFactor={1.5} center>
+      <Html distanceFactor={1} center>
         <div 
           ref={formRef}
           style={{
-            backgroundColor: 'rgba(10, 15, 40, 0.8)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(100, 150, 255, 0.5)',
-            borderRadius: '15px',
-            padding: '30px',
-            width: '300px',
+            backgroundColor: 'rgba(10, 15, 40, 0.85)',
+            backdropFilter: 'blur(15px)',
+            border: '1px solid rgba(100, 150, 255, 0.7)',
+            borderRadius: '20px',
+            padding: '35px',
+            width: '320px',
             transform: isHovered ? 'scale(1.05)' : 'scale(1)',
             transition: 'transform 0.3s ease',
             boxShadow: isHovered ? 
-              '0 0 30px rgba(100, 150, 255, 0.7)' : 
-              '0 0 15px rgba(50, 100, 255, 0.5)',
+              '0 0 40px rgba(100, 150, 255, 0.9)' : 
+              '0 0 20px rgba(50, 100, 255, 0.7)',
             color: 'white'
           }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>ВХОД В СИСТЕМУ</h2>
+          <h2 style={{ 
+            textAlign: 'center', 
+            marginBottom: '25px',
+            fontSize: '24px',
+            letterSpacing: '2px'
+          }}>ВХОД В СИСТЕМУ</h2>
           <form onSubmit={handleLogin}>
             <input
               type="email"
@@ -163,12 +265,13 @@ const Particles = () => {
               onChange={(e) => setEmail(e.target.value)}
               style={{
                 width: '100%',
-                padding: '10px',
-                marginBottom: '10px',
-                borderRadius: '5px',
+                padding: '12px',
+                marginBottom: '15px',
+                borderRadius: '8px',
                 border: '1px solid #4a6fa5',
-                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                color: 'white'
+                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                color: 'white',
+                fontSize: '14px'
               }}
             />
             <input
@@ -178,27 +281,31 @@ const Particles = () => {
               onChange={(e) => setPassword(e.target.value)}
               style={{
                 width: '100%',
-                padding: '10px',
-                marginBottom: '10px',
-                borderRadius: '5px',
+                padding: '12px',
+                marginBottom: '15px',
+                borderRadius: '8px',
                 border: '1px solid #4a6fa5',
-                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                color: 'white'
+                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                color: 'white',
+                fontSize: '14px'
               }}
             />
             <button
               type="submit"
               style={{
                 width: '100%',
-                padding: '10px',
+                padding: '12px',
                 backgroundColor: '#1a237e',
                 color: 'white',
                 border: 'none',
-                borderRadius: '5px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                marginTop: '15px',
+                marginTop: '20px',
                 transition: 'all 0.3s ease',
-                fontSize: '16px'
+                fontSize: '16px',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3)'
               }}
               onMouseEnter={(e) => e.target.style.transform = 'scale(1.03)'}
               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
@@ -206,7 +313,31 @@ const Particles = () => {
               {isSubmitted ? 'ВХОД...' : 'ВОЙТИ'}
             </button>
           </form>
-          {error && <p style={{ color: 'red', marginTop: '10px', fontSize: '14px' }}>{error}</p>}
+          {error && <p style={{ 
+            color: 'red', 
+            marginTop: '15px', 
+            fontSize: '14px',
+            textAlign: 'center'
+          }}>{error}</p>}
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginTop: '15px'
+          }}>
+            <button
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#88aaff',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              {showPassword ? 'Скрыть' : 'Показать'} пароль
+            </button>
+          </div>
         </div>
       </Html>
     );
@@ -215,7 +346,7 @@ const Particles = () => {
   return (
     <group ref={containerRef}>
       {/* Основная анимация */}
-      <group position={[0, 0, 0]}>
+      <group position={[0, 0, -5]}>
         {/* Центральный элемент */}
         <mesh position={[0, 0, 0]} castShadow receiveShadow>
           <torusGeometry args={[1, 0.3, 16, 100]} />
@@ -230,7 +361,7 @@ const Particles = () => {
 
         {/* Внутренний вращающийся элемент */}
         <mesh position={[0, 0, 0]}>
-          <dodecahedronGeometry args={[0.7, 0]} />
+          <dodecahedronGeometry args={[0.7, 1]} />
           <meshStandardMaterial 
             color="#1a237e" 
             metalness={0.95} 
@@ -247,7 +378,7 @@ const Particles = () => {
               attach="attributes-position"
               count={500}
               itemSize={3}
-              array={new Float32Array(500 * 3).map(() => Math.random() * 10 - 5)}
+              array={new Float32Array(500 * 3).map(() => Math.random() * 10 - 22)}
             />
           </bufferGeometry>
           <pointsMaterial 
@@ -261,7 +392,7 @@ const Particles = () => {
 
         {/* Анимация сферы вокруг центрального элемента */}
         <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[2.2, 32, 32]} />
+          <sphereGeometry args={[2.2, 32, 1]} />
           <meshStandardMaterial 
             color="#002255" 
             transparent 
@@ -276,10 +407,13 @@ const Particles = () => {
       <Particles />
       
       {/* Лазерный луч при входе */}
-      <LaserBeam />
+      {isSubmitted && !loginSuccess && <LaserBeam />}
+      
+      {/* Анимация приветствия после входа */}
+      {loginSuccess && <WelcomeAnimation />}
       
       {/* 3D-форма входа */}
-      <LoginForm />
+      {!loginSuccess && <LoginForm />}
     </group>
   );
 };
@@ -297,12 +431,11 @@ const Enhanced3DLogin = ({ onLogin }) => {
       zIndex: 1
     }}>
       <Canvas 
-        camera={{ position: [0, 0, 5], fov: 50 }}
+        camera={{ position: [1, 1], fov: 15 }} // Приближено с 5 до 3
         dpr={[1, 2]}
         shadows
       >
         <ambientLight intensity={0.5} />
-        {/* Заменяем Environment на простые источники света */}
         <directionalLight 
           position={[5, 5, 5]} 
           intensity={1.2} 
