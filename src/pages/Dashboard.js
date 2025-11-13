@@ -15,6 +15,9 @@ import {
   Paper,
   Alert,
   Snackbar,
+  Box,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   BarChart,
@@ -22,11 +25,11 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   Legend,
   ResponsiveContainer,
   LineChart,
   Line,
+  Tooltip as RechartsTooltip, // Переименован для избежания конфликта!
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -34,6 +37,8 @@ import PeopleIcon from '@mui/icons-material/People';
 import BuildIcon from '@mui/icons-material/Build';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import HomeIcon from '@mui/icons-material/Home';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { styled } from '@mui/material/styles';
 
 // Стилизованные компоненты для карточек
@@ -42,12 +47,12 @@ const StyledCard = styled(Card)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   transition: 'box-shadow 0.3s ease-in-out',
-  background: 'linear-gradient(145deg, #f0f0f0, #e0e0e0)', // Градиент для карточек
-  border: '1px solid #ddd', // Легкая рамка
-  borderRadius: '12px', // Скругление углов
-  boxShadow: theme.shadows[2], // Тень по умолчанию
+  background: 'linear-gradient(145deg, #f0f0f0, #e0e0e0)',
+  border: '1px solid #ddd',
+  borderRadius: '12px',
+  boxShadow: theme.shadows[2],
   '&:hover': {
-    boxShadow: theme.shadows[6], // Увеличиваем тень при наведении
+    boxShadow: theme.shadows[6],
   },
 }));
 
@@ -55,7 +60,7 @@ const StyledCardHeader = styled(Typography)(({ theme }) => ({
   fontWeight: 'bold',
   fontSize: '1.1rem',
   marginBottom: theme.spacing(1),
-  color: '#333', // Темный текст для лучшей читаемости
+  color: '#333',
 }));
 
 const StyledCardContent = styled(CardContent)(({ theme }) => ({
@@ -63,7 +68,7 @@ const StyledCardContent = styled(CardContent)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  padding: theme.spacing(2), // Увеличиваем внутренний отступ
+  padding: theme.spacing(2),
 }));
 
 // Функция для форматирования чисел
@@ -87,6 +92,8 @@ const getStatusColor = (status) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [metrics, setMetrics] = useState({
     totalRepairs: 0,
     onlineMasters: 0,
@@ -229,15 +236,39 @@ const Dashboard = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 2, mb: 4, minHeight: '100vh', background: 'linear-gradient(to bottom right, #f5f7fa, #e4edf5)', padding: '20px', borderRadius: '12px' }}> {/* Градиент фон */}
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#2c3e50', textAlign: 'center', mb: 3, mt: 1 }}>
+    <Container maxWidth="lg" sx={{ 
+      mt: 2, 
+      mb: 4, 
+      minHeight: '100vh', 
+      background: 'linear-gradient(to bottom right, #f5f7fa, #e4edf5)', 
+      padding: '20px', 
+      borderRadius: '12px',
+      [theme.breakpoints.down('sm')]: {
+        padding: '10px',
+      }
+    }}>
+      <Typography variant="h4" gutterBottom sx={{ 
+        fontWeight: 'bold', 
+        color: '#2c3e50', 
+        textAlign: 'center', 
+        mb: 3, 
+        mt: 1,
+        background: 'linear-gradient(90deg, #1a237e 0%, #0d47a1 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        fontSize: { xs: '1.8rem', sm: '2.2rem' }
+      }}>
         Панель управления
       </Typography>
-
       {/* Статистика */}
-      <Grid container spacing={3}>
+      <Grid container spacing={3} mb={4}>
         {/* Общее количество ремонтов */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 4
+          }}>
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">Общее количество ремонтов</StyledCardHeader>
@@ -251,10 +282,19 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
-                variant="outlined" // Изменено с "contained" на "outlined"
+                variant="contained"
                 color="primary"
                 onClick={handleNavigateToRepairs}
                 startIcon={<BuildIcon />}
+                sx={{
+                  borderRadius: '20px',
+                  fontWeight: 'bold',
+                  px: 2,
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme.shadows[6]
+                  }
+                }}
               >
                 Подробнее
               </Button>
@@ -263,7 +303,12 @@ const Dashboard = () => {
         </Grid>
 
         {/* Мастера онлайн */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 4
+          }}>
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">Мастера онлайн</StyledCardHeader>
@@ -277,10 +322,19 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
-                variant="outlined" // Изменено с "contained" на "outlined"
+                variant="contained"
                 color="primary"
                 onClick={handleNavigateToMasters}
                 startIcon={<PeopleIcon />}
+                sx={{
+                  borderRadius: '20px',
+                  fontWeight: 'bold',
+                  px: 2,
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme.shadows[6]
+                  }
+                }}
               >
                 Подробнее
               </Button>
@@ -289,7 +343,12 @@ const Dashboard = () => {
         </Grid>
 
         {/* Критически важные запчасти */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 4
+          }}>
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">Критически важные запчасти</StyledCardHeader>
@@ -303,10 +362,19 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
-                variant="outlined" // Изменено с "contained" на "outlined"
+                variant="contained"
                 color="primary"
                 onClick={handleNavigateToParts}
                 startIcon={<InventoryIcon />}
+                sx={{
+                  borderRadius: '20px',
+                  fontWeight: 'bold',
+                  px: 2,
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme.shadows[6]
+                  }
+                }}
               >
                 Подробнее
               </Button>
@@ -315,11 +383,15 @@ const Dashboard = () => {
         </Grid>
 
         {/* Последние ремонты */}
-        <Grid item xs={12} md={8}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 8
+          }}>
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">Последние ремонты</StyledCardHeader>
-              <Paper sx={{ p: 2, maxHeight: 300, overflow: 'auto', backgroundColor: '#fafafa' }}>
+              <Paper sx={{ p: 2, maxHeight: 300, overflow: 'auto', backgroundColor: '#fafafa', borderRadius: '10px' }}>
                 {metrics.recentRepairs.length > 0 ? (
                   <ul style={{ paddingLeft: '1rem', margin: 0 }}>
                     {metrics.recentRepairs.map((repair) => (
@@ -340,10 +412,19 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
-                variant="outlined" // Изменено с "contained" на "outlined"
+                variant="contained"
                 color="primary"
                 onClick={handleNavigateToRepairs}
                 startIcon={<BuildIcon />}
+                sx={{
+                  borderRadius: '20px',
+                  fontWeight: 'bold',
+                  px: 2,
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme.shadows[6]
+                  }
+                }}
               >
                 Все ремонты
               </Button>
@@ -352,18 +433,22 @@ const Dashboard = () => {
         </Grid>
 
         {/* График загрузки мастеров */}
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           <StyledCard>
             <StyledCardContent>
               <StyledCardHeader variant="h6">График загрузки мастеров</StyledCardHeader>
-              <Paper sx={{ height: 250, p: 1, backgroundColor: '#ffffff' }}>
+              <Paper sx={{ height: 250, p: 1, backgroundColor: '#ffffff', borderRadius: '10px' }}>
                 {metrics.repairTrends.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
                       <XAxis dataKey="name" stroke="#666" />
                       <YAxis stroke="#666" />
-                      <Tooltip />
+                      <RechartsTooltip /> {/* Используем переименованный Tooltip */}
                       <Legend />
                       <Bar dataKey="Количество ремонтов" fill="#3498db" />
                     </BarChart>
@@ -378,10 +463,19 @@ const Dashboard = () => {
             <CardActions sx={{ justifyContent: 'flex-end' }}>
               <Button
                 size="small"
-                variant="outlined" // Изменено с "contained" на "outlined"
+                variant="contained"
                 color="primary"
                 onClick={handleNavigateToReports}
                 startIcon={<AssessmentIcon />}
+                sx={{
+                  borderRadius: '20px',
+                  fontWeight: 'bold',
+                  px: 2,
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme.shadows[6]
+                  }
+                }}
               >
                 Отчеты
               </Button>
@@ -389,67 +483,6 @@ const Dashboard = () => {
           </StyledCard>
         </Grid>
       </Grid>
-
-      {/* Навигационные кнопки */}
-      <Divider sx={{ my: 3 }} />
-      <Grid container spacing={2} justifyContent="center">
-        <Grid item>
-          <Button
-            variant="outlined" // Изменено с "contained" на "outlined"
-            color="primary"
-            onClick={handleNavigateToRepairs}
-            startIcon={<BuildIcon />}
-            sx={{ px: 3, py: 1.5 }}
-          >
-            Ремонты
-          </Button>
-        </Grid>
-        <Grid item>
-          <Button
-            variant="outlined" // Изменено с "contained" на "outlined"
-            color="primary"
-            onClick={handleNavigateToMasters}
-            startIcon={<PeopleIcon />}
-            sx={{ px: 3, py: 1.5 }}
-          >
-            Мастера
-          </Button>
-        </Grid>
-        <Grid item>
-          <Button
-            variant="outlined" // Изменено с "contained" на "outlined"
-            color="primary"
-            onClick={handleNavigateToParts}
-            startIcon={<InventoryIcon />}
-            sx={{ px: 3, py: 1.5 }}
-          >
-            Запчасти
-          </Button>
-        </Grid>
-        <Grid item>
-          <Button
-            variant="outlined" // Изменено с "contained" на "outlined"
-            color="primary"
-            onClick={handleNavigateToReports}
-            startIcon={<AssessmentIcon />}
-            sx={{ px: 3, py: 1.5 }}
-          >
-            Отчеты
-          </Button>
-        </Grid>
-        <Grid item>
-          <Button
-            variant="outlined" // Изменено с "contained" на "outlined"
-            color="primary"
-            onClick={handleNavigateToSettings}
-            startIcon={<AddCircleIcon />}
-            sx={{ px: 3, py: 1.5 }}
-          >
-            Настройки
-          </Button>
-        </Grid>
-      </Grid>
-
       {/* Снэкбар для уведомлений */}
       <Snackbar
         open={snackbarOpen}
