@@ -3,36 +3,44 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase.js';
 
 const LoginScene = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSpinning, setIsSpinning] = useState(true);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const containerRef = useRef();
   const formRef = useRef();
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
   const { camera } = useThree();
 
   // Анимация вращения камеры
   useFrame(() => {
-    if (isSpinning && !isSubmitted && !loginSuccess) {
+    if (isSpinning && !isLoggingIn && !loginSuccess) {
       camera.position.x = Math.sin(Date.now() * 0.001) * 5;
       camera.position.z = Math.cos(Date.now() * 0.001) * 5;
       camera.lookAt(0, 0, 0);
     }
   });
 
-  // Обработка входа
+  // Обработка входа с Firebase
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (isSubmitted) return;
+    if (isLoggingIn) return;
+    
+    setError('');
+    setIsLoggingIn(true);
+    setIsSpinning(false);
     
     try {
-      setIsSubmitted(true);
-      setIsSpinning(false);
+      // Аутентификация через Firebase
+      await signInWithEmailAndPassword(auth, email, password);
       
       // Анимация завершения входа
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -44,9 +52,20 @@ const LoginScene = ({ onLogin }) => {
       
       onLogin();
     } catch (err) {
-      setError('Ошибка входа');
-      setIsSubmitted(false);
+      let errorMessage = 'Ошибка входа';
+      
+      if (err.code === 'auth/user-not-found') {
+        errorMessage = 'Пользователь с таким email не найден';
+      } else if (err.code === 'auth/wrong-password') {
+        errorMessage = 'Неверный пароль';
+      } else {
+        errorMessage = 'Произошла ошибка при входе: ' + err.message;
+      }
+      
+      setError(errorMessage);
+      setIsLoggingIn(false);
       setIsSpinning(true);
+      console.error("Ошибка входа:", err);
     }
   };
 
@@ -55,7 +74,7 @@ const LoginScene = ({ onLogin }) => {
     const [progress, setProgress] = useState(0);
     
     useFrame(() => {
-      if (isSubmitted && progress < 1) {
+      if (isLoggingIn && progress < 1) {
         setProgress(prev => Math.min(prev + 0.02, 1));
       }
     });
@@ -229,7 +248,34 @@ const LoginScene = ({ onLogin }) => {
   // Форма входа как 3D объект
   const LoginForm = () => {
     const [isHovered, setIsHovered] = useState(false);
-    
+
+    // Предотвращаем событие blur для input полей
+    const handleInputFocus = (e) => {
+      // Для мобильных устройств предотвращаем автоматическую скролл-анимацию
+      if ('ontouchstart' in window) {
+        e.target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    };
+
+    // Управление фокусом
+    useEffect(() => {
+      const handleTouchStart = (e) => {
+        if (emailInputRef.current && emailInputRef.current.contains(e.target)) {
+          setIsSpinning(false);
+        } else if (passwordInputRef.current && passwordInputRef.current.contains(e.target)) {
+          setIsSpinning(false);
+        } else {
+          setIsSpinning(true);
+        }
+      };
+
+      document.addEventListener('touchstart', handleTouchStart);
+
+      return () => {
+        document.removeEventListener('touchstart', handleTouchStart);
+      };
+    }, []);
+
     return (
       <Html distanceFactor={1} center>
         <div 
@@ -263,6 +309,8 @@ const LoginScene = ({ onLogin }) => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onFocus={handleInputFocus}
+              ref={emailInputRef}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -279,6 +327,8 @@ const LoginScene = ({ onLogin }) => {
               placeholder="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onFocus={handleInputFocus}
+              ref={passwordInputRef}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -310,7 +360,7 @@ const LoginScene = ({ onLogin }) => {
               onMouseEnter={(e) => e.target.style.transform = 'scale(1.03)'}
               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
             >
-              {isSubmitted ? 'ВХОД...' : 'ВОЙТИ'}
+              {isLoggingIn ? 'ВХОД...' : 'ВОЙТИ'}
             </button>
           </form>
           {error && <p style={{ 
@@ -347,30 +397,6 @@ const LoginScene = ({ onLogin }) => {
     <group ref={containerRef}>
       {/* Основная анимация */}
       <group position={[0, 0, -5]}>
-        {/* Центральный элемент */}
-        <mesh position={[0, 0, 0]} castShadow receiveShadow>
-          <torusGeometry args={[1, 0.3, 16, 100]} />
-          <meshStandardMaterial 
-            color="#0d47a1" 
-            metalness={0.9} 
-            roughness={0.1}
-            emissive="#003366"
-            emissiveIntensity={0.5}
-          />
-        </mesh>
-
-        {/* Внутренний вращающийся элемент */}
-        <mesh position={[0, 0, 0]}>
-          <dodecahedronGeometry args={[0.7, 1]} />
-          <meshStandardMaterial 
-            color="#1a237e" 
-            metalness={0.95} 
-            roughness={0.05}
-            emissive="#0055ff"
-            emissiveIntensity={0.7}
-          />
-        </mesh>
-
         {/* Дополнительные визуальные элементы */}
         <points>
           <bufferGeometry>
@@ -389,25 +415,13 @@ const LoginScene = ({ onLogin }) => {
             sizeAttenuation={true} 
           />
         </points>
-
-        {/* Анимация сферы вокруг центрального элемента */}
-        <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[2.2, 32, 1]} />
-          <meshStandardMaterial 
-            color="#002255" 
-            transparent 
-            opacity={0.15} 
-            wireframe 
-            wireframeLinewidth={1}
-          />
-        </mesh>
       </group>
 
       {/* Система частиц */}
       <Particles />
       
       {/* Лазерный луч при входе */}
-      {isSubmitted && !loginSuccess && <LaserBeam />}
+      {isLoggingIn && !loginSuccess && <LaserBeam />}
       
       {/* Анимация приветствия после входа */}
       {loginSuccess && <WelcomeAnimation />}
@@ -431,7 +445,7 @@ const Enhanced3DLogin = ({ onLogin }) => {
       zIndex: 1
     }}>
       <Canvas 
-        camera={{ position: [1, 1], fov: 15 }} // Приближено с 5 до 3
+        camera={{ position: [1, 1], fov: 15 }}
         dpr={[1, 2]}
         shadows
       >
